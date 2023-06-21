@@ -6,15 +6,17 @@ from mpl_toolkits.mplot3d import Axes3D
 # use latex for rendering in matplotlib
 plt.rc('text', usetex=True)
 
-def run(laser_azimuth, laser_polar, mirror_roll, mirror_pitch, mirror_yaw):
+def run(laser_azimuth, laser_polar, mirror_roll, mirror_pitch, mirror_yaw, intersection_plane_roll, intersection_plane_pitch, intersection_plane_yaw, intersection_plane_point):
     incident_vector = calculate_incident_vector(laser_azimuth, laser_polar)
     plane_normal = calculate_plane_normal(mirror_roll, mirror_pitch, mirror_yaw)
     reflected_vector = calculate_reflected_vector(incident_vector, plane_normal)
     azimuth, polar = convert_to_spherical_coordinates(reflected_vector)
+    intersection_plane_normal = calculate_plane_normal(intersection_plane_roll, intersection_plane_pitch, intersection_plane_yaw)
+    intersection_point = compute_intersection(intersection_plane_point, intersection_plane_normal, np.array([0,0,0]) ,reflected_vector)
     visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector)
     print(f'Reflected Vector Azimuth: {azimuth} degrees')
     print(f'Reflected Vector Polar: {polar} degrees')
-    print(f'Reflected Vector Cartesian: {reflected_vector}')
+    print(f'Photodiode Intersection with Reflected Vector Point: {np.round(intersection_point, 3)}')
 
 def calculate_incident_vector(azimuth, polar):
     """
@@ -173,6 +175,23 @@ def visualize_beam_and_surface(incident_vector, reflected_vector):
     # Show the figure
     plt.show()
 
+def compute_intersection(plane_point, plane_normal, line_point, reflected_vector):
+    """
+    Function to calculate the intersection of a line and a plane. The line is defined by a point and a direction 
+    vector, and the plane is defined by a point and a normal vector.
+    """
+    # Normalize vectors to ensure their magnitudes are 1
+    plane_normal = plane_normal / np.linalg.norm(plane_normal)
+    reflected_vector = reflected_vector / np.linalg.norm(reflected_vector)
+
+    # Calculate the value t
+    t = np.dot(plane_point - line_point, plane_normal) / np.dot(reflected_vector, plane_normal)
+
+    # Calculate the intersection point
+    intersection_point = line_point + t * reflected_vector
+
+    return intersection_point
+
 def visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector):
     """
     Function to generate a 3D plotly visualization of the incident and reflected beams and the reflecting surface.
@@ -216,9 +235,18 @@ def visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector):
     # set the axes labels and title
     fig.update_layout(
         scene=dict(
-            xaxis_title='X',
-            yaxis_title='Y',
-            zaxis_title='Z',
+            xaxis=dict(
+                range=[-1, 1],
+                title='X'
+            ),
+            yaxis=dict(
+                range=[-1, 1],
+                title='Y'
+            ),
+            zaxis=dict(
+                range=[-1, 1],
+                title='Z'
+            ),
             aspectmode='cube',
             camera=dict(
                 eye=dict(
