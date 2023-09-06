@@ -73,9 +73,9 @@ def calculate_plane_normal(roll, pitch, yaw):
                     [0, np.cos(roll), -np.sin(roll)],
                     [0, np.sin(roll), np.cos(roll)]])
 
-    R_y = np.array([[np.cos(pitch), 0, np.sin(pitch)],
+    R_y = np.array([[np.cos(pitch), 0, -np.sin(pitch)],
                     [0, 1, 0],
-                    [-np.sin(pitch), 0, np.cos(pitch)]])
+                    [np.sin(pitch), 0, np.cos(pitch)]])
 
     R_z = np.array([[np.cos(yaw), -np.sin(yaw), 0],
                     [np.sin(yaw), np.cos(yaw), 0],
@@ -250,9 +250,9 @@ def visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector):
             aspectmode='cube',
             camera=dict(
                 eye=dict(
-                    x=1.5,
-                    y=1.5,
-                    z=1.5
+                    x=0,
+                    y=-2,
+                    z=0.2
                 )
             )
         ),
