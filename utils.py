@@ -18,7 +18,7 @@ def run(laser_azimuth, laser_polar, mirror_roll, mirror_pitch, mirror_yaw, inter
     print(f'Reflected Vector Polar: {polar} degrees')
     print(f'Photodiode Intersection with Reflected Vector Point: {np.round(intersection_point, 3)}')
 
-def calculate_incident_vector(azimuth, polar):
+def calculate_incident_vector(azimuth, polar, r=1):
     """
     Function to calculate the direction vector of the incident laser beam from its azimuth and polar angles.
 
@@ -43,8 +43,14 @@ def calculate_incident_vector(azimuth, polar):
     y = np.sin(azimuth_rad) * np.sin(polar_rad)
     z = np.cos(polar_rad)
 
-    # return the incident vector
-    return np.array([x, y, z])
+    # convert the x, y, and z components to a unit vector
+    incident_vector = np.array([x, y, z])
+    incident_vector = incident_vector / np.linalg.norm(incident_vector)
+
+    # scale the unit vector by the radius of the sphere
+    incident_vector = incident_vector * r
+    
+    return incident_vector 
 
 def calculate_plane_normal(roll, pitch, yaw):
     """
@@ -85,9 +91,12 @@ def calculate_plane_normal(roll, pitch, yaw):
 
     plane_normal = R[:,2]
 
+    # convert to a unit vector
+    plane_normal = plane_normal / np.linalg.norm(plane_normal)
+
     return plane_normal
 
-def calculate_reflected_vector(incident_vector, plane_normal):
+def calculate_reflected_vector(incident_vector, plane_normal, r=1):
     """
     Function to calculate the direction vector of the reflected beam given the incident vector and the normal vector.
 
@@ -106,7 +115,12 @@ def calculate_reflected_vector(incident_vector, plane_normal):
     # calculate the reflected vector
     reflected_vector = incident_vector - 2 * np.dot(incident_vector, plane_normal) * plane_normal
 
-    # return the reflected vector
+    # normalize the reflected vector
+    reflected_vector = reflected_vector / np.linalg.norm(reflected_vector)
+
+    # scale the reflected vector by the radius of the sphere
+    reflected_vector = reflected_vector * r
+
     return reflected_vector
 
 def convert_to_spherical_coordinates(reflected_vector):
