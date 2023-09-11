@@ -15,7 +15,7 @@ class LaserReflection3D(ThreeDScene):
         # self.set_camera_orientation(phi=20 * DEGREES, theta=-90 * DEGREES, distance=20)
         # self.set_camera_orientation(phi=90 * DEGREES, theta=-5 * DEGREES, distance=20)
         # self.set_camera_orientation(phi=90 * DEGREES, theta=-88 * DEGREES, distance=20)
-        self.set_camera_orientation(phi=75 * DEGREES, theta=10 * DEGREES, distance=20)
+        self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES, distance=20)
 
         camera_rotation_rate = 0.2
 
@@ -26,12 +26,17 @@ class LaserReflection3D(ThreeDScene):
         degrees_per_second = 4
 
         # Specify the orientation of the mirror using roll, pitch, and yaw
-        mirror_roll = 0
-        mirror_pitch = -10
+        mirror_roll = 10
+        mirror_pitch = 0
         mirror_yaw = 0
 
         # Define the end pitch of the mirror
-        mirror_pitch_end = 10
+        mirror_roll_end = 0
+
+        if mirror_roll_end < mirror_roll:
+            dt_sign = -1
+        else:
+            dt_sign = 1
 
         # Set the incident laser vector
         azimuth_angle = 45  # Sample value, you can change this
@@ -48,8 +53,8 @@ class LaserReflection3D(ThreeDScene):
         mirror.set_stroke(width=0.5, color=GOLD_A)
 
         # Set the orientation of the mirror based on the roll, pitch, and yaw
-        mirror.rotate(mirror_roll * DEGREES, axis=OUT)
-        mirror.rotate(mirror_pitch * DEGREES, axis=RIGHT)
+        mirror.rotate(mirror_roll * DEGREES, axis=RIGHT)
+        mirror.rotate(mirror_pitch * DEGREES, axis=OUT)
         mirror.rotate(mirror_yaw * DEGREES, axis=UP)
 
         # calculate the normal vector of the mirror
@@ -69,7 +74,7 @@ class LaserReflection3D(ThreeDScene):
         reflected_path.set_points_as_corners([reflected_end, reflected_end])
 
         # define a ValueTracker to keep track of the angle of rotation
-        angle_tracker = ValueTracker(mirror_pitch)
+        angle_tracker = ValueTracker(mirror_roll)
 
         # define a tracker to keep track of the reflected laser vector components
         reflected_laser_x = ValueTracker(reflected_direction[0])
@@ -82,7 +87,7 @@ class LaserReflection3D(ThreeDScene):
         reflected_laser_z_label = MathTex(r"R_z = {:05.2f}".format(reflected_direction[2])).next_to(reflected_laser_y_label, DOWN)
         
         # Define a label to display the angle of rotation to sit in the top right corner
-        angle_label = MathTex(r"\theta = {:03}^\circ".format(mirror_pitch)).to_corner(UR)        
+        angle_label = MathTex(r"\theta = {:03}^\circ".format(mirror_roll)).to_corner(UR)        
 
         # Add the labels to the scene
         self.add_fixed_in_frame_mobjects(angle_label, reflected_laser_x_label, reflected_laser_y_label, reflected_laser_z_label)
@@ -108,12 +113,12 @@ class LaserReflection3D(ThreeDScene):
 
         # Define an updater to rotate the mirror at a constant rate and update a label showing the value of rotation
         def update_mirror_rotation(mob, dt):
-            d_angle = degrees_per_second * dt
+            d_angle = degrees_per_second * dt * dt_sign
             mob.rotate(d_angle * DEGREES, axis=RIGHT)
             angle_tracker.increment_value(d_angle)
 
         def update_reflected_laser(mob):
-            current_normal = calculate_plane_normal(mirror_roll, angle_tracker.get_value(), mirror_yaw)
+            current_normal = calculate_plane_normal(angle_tracker.get_value(), mirror_pitch, mirror_yaw)
             new_reflected_dir = calculate_reflected_vector(incident_vector, current_normal)
             reflected_laser_x.set_value(new_reflected_dir[0])
             reflected_laser_y.set_value(new_reflected_dir[1])
@@ -151,7 +156,7 @@ class LaserReflection3D(ThreeDScene):
         # Show the reflection.
         self.play(Create(reflected_laser), run_time=0.25)
 
-        self.wait(1)
+        self.wait(10)
 
         # Now, add the updaters for mirror rotation and other necessary updaters after the objects have been played/loaded.
         angle_label.add_updater(update_angle_label)
@@ -166,7 +171,7 @@ class LaserReflection3D(ThreeDScene):
         self.add(reflected_path, reflected_dot)
 
         # Rotate the mirror by x degrees.
-        dT = (mirror_pitch_end - mirror_pitch) / degrees_per_second
+        dT = np.abs((mirror_roll_end - mirror_roll)) / degrees_per_second
         self.wait(dT)
 
         # stop the rotation

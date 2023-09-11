@@ -13,7 +13,7 @@ def run(laser_azimuth, laser_polar, mirror_roll, mirror_pitch, mirror_yaw, inter
     azimuth, polar = convert_to_spherical_coordinates(reflected_vector)
     intersection_plane_normal = calculate_plane_normal(intersection_plane_roll, intersection_plane_pitch, intersection_plane_yaw)
     intersection_point = compute_intersection(intersection_plane_point, intersection_plane_normal, np.array([0,0,0]) ,reflected_vector)
-    visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector)
+    visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector, plane_normal)
     print(f'Reflected Vector Azimuth: {azimuth} degrees')
     print(f'Reflected Vector Polar: {polar} degrees')
     print(f'Photodiode Intersection with Reflected Vector Point: {np.round(intersection_point, 3)}')
@@ -79,9 +79,9 @@ def calculate_plane_normal(roll, pitch, yaw):
                     [0, np.cos(roll), -np.sin(roll)],
                     [0, np.sin(roll), np.cos(roll)]])
 
-    R_y = np.array([[np.cos(pitch), 0, -np.sin(pitch)],
+    R_y = np.array([[np.cos(pitch), 0, np.sin(pitch)],
                     [0, 1, 0],
-                    [np.sin(pitch), 0, np.cos(pitch)]])
+                    [-np.sin(pitch), 0, np.cos(pitch)]])
 
     R_z = np.array([[np.cos(yaw), -np.sin(yaw), 0],
                     [np.sin(yaw), np.cos(yaw), 0],
@@ -206,7 +206,7 @@ def compute_intersection(plane_point, plane_normal, line_point, reflected_vector
 
     return intersection_point
 
-def visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector):
+def visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector, normal_vector=None):
     """
     Function to generate a 3D plotly visualization of the incident and reflected beams and the reflecting surface.
 
@@ -245,6 +245,20 @@ def visualize_beam_and_surface_with_plotly(incident_vector, reflected_vector):
             width=5
         )
     ))
+
+    # add the normal vector to the figure
+    if normal_vector is not None:
+        fig.add_trace(go.Scatter3d(
+            x=[0, normal_vector[0]],
+            y=[0, normal_vector[1]],
+            z=[0, normal_vector[2]],
+            name='Normal Vector',
+            mode='lines',
+            line=dict(
+                color='black',
+                width=5
+            )
+        ))
 
     # set the axes labels and title
     fig.update_layout(
